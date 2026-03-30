@@ -34,8 +34,7 @@ CREATE TABLE IF NOT EXISTS car_registration_stats (
     INDEX idx_vhcty  (vhcty_asort_code)
 ) COMMENT='자동차_신규등록_통계';
 
--- 월별 정책 뉴스 수 (더미 → 실제 크롤링 값으로 교체 예정)
- 
+-- 월별 정책 뉴스 수 테이블 생성
 CREATE TABLE IF NOT EXISTS ev_news_monthly (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     year       INT NOT NULL COMMENT '연도',
