@@ -17,13 +17,13 @@ SERVICE_KEY  = os.getenv("PUBLIC_SERVICE_KEY")
 URL          = "https://apis.data.go.kr/B553881/newRegistlnfoService_02/getnewRegistlnfoService02"
 FUEL_CODE    = "5"            # 전기차
 VHCTY_CODES  = ["1", "2", "3", "4"] # 승용/승합/화물/특수
-SEXDSTN_LIST = ["남자", "여자", "법인"]
+SEXDSTN_CODE = {"남자": 1, "여자": 2, "법인": 0}
 AGRDE_LIST   = ["1", "2", "3", "4", "5", "6", "7", "8"] # 10대~80대
 
 # 수집 범위
+# 2017년 1월 - 2026년 2월까지 저장됨 
 START_YEAR, START_MONTH = 2017, 1
-TODAY = date.today()
-END_YEAR, END_MONTH = TODAY.year, TODAY.month
+END_YEAR, END_MONTH = 2026, 2
 
 def call_api(params):
     """API 호출 후 (resultCode, dtaCo) 반환"""
@@ -73,7 +73,7 @@ def run():
         month_rows = []
         
         for vhcty in VHCTY_CODES:
-            for sexdstn in SEXDSTN_LIST:
+            for sexdstn in SEXDSTN_CODE.keys():
                 # 법인은 연령대 "0", 개인은 "1"~"8"
                 agrde_targets = ["0"] if sexdstn == "법인" else AGRDE_LIST
                 
@@ -93,12 +93,12 @@ def run():
                     # 정상 응답이고 등록 건수가 있을 때만 저장
                     if code == "00" and cnt > 0:
                         month_rows.append({
-                            "regist_yy": str(year),
-                            "regist_mt": f"{month:02d}",
-                            "vhcty_asort_code": vhcty,
-                            "sexdstn": sexdstn,
-                            "agrde": agrde,
-                            "cnt": cnt
+                            "regist_yy":        int(year),
+                            "regist_mt":        int(month),
+                            "vhcty_asort_code": int(vhcty),
+                            "sexdstn":          SEXDSTN_CODE[sexdstn],  # "남자" → 1
+                            "agrde":            int(agrde),
+                            "cnt":              cnt
                         })
                     
                     time.sleep(0.2)
