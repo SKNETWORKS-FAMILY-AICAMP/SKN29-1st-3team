@@ -11,7 +11,8 @@ MENU = {
     "정책 뉴스 & 전기차 등록 대수": "views.page1_ev_news_visualize",
     "보조금 현황 페이지": "views.page2_subsidy_status",
     "구매자 프로파일": "views.page3_buyer_profile",
-    "FAQ" : "views.page4_faq"
+    "FAQ" : "views.page4_faq",
+    "워드클라우드": "views.page5_word_cloud"
 }
 
 # 사이드바
