@@ -14,14 +14,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from utils.db_connection import get_connection
 
-# 정책 이벤트 마커 목록
-POLICY_EVENTS = [
-    {"year": 2026, "month": 2, "label": "21년 보조금 확정"},
-    {"year": 2025, "month": 7, "label": "충전시설 의무설치 강화"},
-    {"year": 2025, "month": 2, "label": "보조금 전면 개편"},
-    {"year": 2023, "month": 2, "label": "24년 전기차 보조금 발표"},
-]
-
 VHCTY_NAME = {"1": "승용", "2": "승합", "3": "화물", "4": "특수"} # 차종코드
 BAR_COLORS = {"승용": "#4373CC", "승합": "#F6D531", "화물": "#66CC54", "특수": "#8149CF"} # 차종별 막대 색상
 
@@ -95,7 +87,7 @@ def load_data():
     return df_total.sort_values("ym"), df_pivot.sort_values("ym")
 
 
-def build_figure(df_total, df_pivot, sel_vhcty, show_events, sel_years):
+def build_figure(df_total, df_pivot, sel_vhcty, sel_years):
     """
     선택된 연도, 차종 조건으로 이중축 그래프 생성
     - 차종별 누적 막대 (등록 대수)
@@ -133,27 +125,6 @@ def build_figure(df_total, df_pivot, sel_vhcty, show_events, sel_years):
         marker=dict(size=6),
         yaxis="y2",
     ))
-
-    # 정책 이벤트 마커
-    if show_events:
-        ym_strs = df_t["ym"].dt.strftime("%Y-%m-%d").values
-        for ev in POLICY_EVENTS:
-            ev_str = f"{ev['year']}-{ev['month']:02d}-01"
-            if ev_str in ym_strs:
-                fig.add_shape(
-                    type="line",
-                    x0=ev_str, x1=ev_str,
-                    y0=0, y1=1, yref="paper",
-                    line=dict(color="gray", width=1.5, dash="dot")
-                )
-                fig.add_annotation(
-                    x=ev_str, y=1, yref="paper",
-                    text=ev["label"],
-                    showarrow=False,
-                    textangle=-90,
-                    xanchor="right",
-                    font=dict(size=11, color="gray"),
-                )
 
     y1_title = "신규 등록 대수 (대) — " + ("전체" if len(sel_vhcty) == 4 else "+".join(sel_vhcty))
     
@@ -225,8 +196,6 @@ def render():
     )
     sel_years = list(range(sel_year_range[0], sel_year_range[1] + 1))
 
-    show_events = st.sidebar.checkbox("정책 이벤트 마커 표시", value=True)
-
     # 차종 
     st.sidebar.markdown("### 차종 선택")
     vhcty_options = ["승용", "승합", "화물", "특수"]
@@ -241,7 +210,7 @@ def render():
         sel_vhcty = vhcty_options
 
     # 그래프
-    fig, reg_sum, reg_mean = build_figure(df_total, df_pivot, sel_vhcty, show_events, sel_years)
+    fig, reg_sum, reg_mean = build_figure(df_total, df_pivot, sel_vhcty, sel_years)
     st.plotly_chart(fig, use_container_width=True)
 
     # 요약 지표
