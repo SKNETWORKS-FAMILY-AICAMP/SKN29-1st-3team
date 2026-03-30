@@ -12,6 +12,7 @@ import os
 # =====================
 # 환경변수 로드
 # =====================
+# .env 파일에서 DB 접속 정보 불러오기
 load_dotenv()
 
 DB_CONFIG = {
@@ -29,13 +30,14 @@ KIA_URL = "https://www.kia.com/kr/vehicles/kia-ev/guide/faq"
 KEPCO_API_URL = "https://plug.kepco.co.kr:23001/api/v1/faq"
 HYUNDAI_URL = "https://www.hyundai.com/kr/ko/faq.html"
 TESLA_BLOG_URL = "https://blog.naver.com/teslakr_official/224174286716"
-HYUNDAI_URL = "https://www.hyundai.com/kr/ko/faq.html"
+HYUNDAI_URL = "https://www.hyundai.com/kr/ko/faq.html"  # 같은 값이 한 번 더 선언됨
 
 
 # =====================
 # 공통 유틸
 # =====================
 def clean_text(text: str) -> str:
+    # HTML 엔티티 변환 후 공백 정리
     if not text:
         return ""
     text = html.unescape(text)
@@ -44,6 +46,7 @@ def clean_text(text: str) -> str:
 
 
 def strip_html_tags(raw_html: str) -> str:
+    # HTML 태그 제거 + 줄바꿈/공백 정리
     if not raw_html:
         return ""
     raw_html = html.unescape(raw_html)
@@ -56,10 +59,12 @@ def strip_html_tags(raw_html: str) -> str:
 
 
 def validate_item(item: Dict) -> bool:
+    # 최소한 question, answer, source가 있어야 유효 데이터로 봄
     return bool(item.get("question") and item.get("answer") and item.get("source"))
 
 
 def deduplicate_items(items: List[Dict]) -> List[Dict]:
+    # 질문/답변/출처가 완전히 같은 데이터는 중복 제거
     seen = set()
     result = []
     for item in items:
@@ -75,6 +80,7 @@ def deduplicate_items(items: List[Dict]) -> List[Dict]:
 
 
 async def safe_inner_text(element) -> str:
+    # Playwright 요소에서 텍스트 추출 실패 시 빈 문자열 반환
     try:
         return clean_text(await element.inner_text())
     except Exception:
@@ -82,6 +88,7 @@ async def safe_inner_text(element) -> str:
 
 
 async def safe_inner_html_text(element) -> str:
+    # Playwright 요소의 inner_html을 텍스트로 정리해서 반환
     try:
         raw = await element.inner_html()
         return strip_html_tags(raw)
@@ -98,10 +105,11 @@ async def crawl_kia(browser) -> List[Dict]:
     results = []
 
     try:
-        # networkidle: JS 렌더링 완료 후 네트워크가 잠잠해질 때까지 대기
+        # JS 렌더링까지 고려해서 페이지 로드
         await page.goto(KIA_URL, wait_until="networkidle", timeout=30000)
         await page.wait_for_timeout(2000)
 
+        # 사이트 구조가 달라질 수 있어서 셀렉터 후보를 여러 개 둠
         selector_candidates = [
             ".cmp-accordion__item",
             "[class*='accordion']",
@@ -112,14 +120,13 @@ async def crawl_kia(browser) -> List[Dict]:
         faq_items = []
         for selector in selector_candidates:
             try:
-                # 셀렉터가 DOM에 나타날 때까지 최대 5초 대기
                 await page.wait_for_selector(selector, timeout=5000)
                 faq_items = await page.query_selector_all(selector)
                 if faq_items:
                     print(f"[Kia] matched selector: {selector}, count={len(faq_items)}")
                     break
             except PlaywrightTimeoutError:
-                # 해당 셀렉터가 없으면 다음 셀렉터 시도
+                # 해당 셀렉터가 안 맞으면 다음 후보 시도
                 continue
 
         if not faq_items:
@@ -130,6 +137,7 @@ async def crawl_kia(browser) -> List[Dict]:
             question = ""
             answer = ""
 
+            # 질문이 들어있을 가능성이 있는 태그들을 순서대로 확인
             for q_sel in ["button.cmp-accordion__button", "dt", "summary", "button", "h3", "h4"]:
                 q_el = await item.query_selector(q_sel)
                 if q_el:
@@ -137,6 +145,7 @@ async def crawl_kia(browser) -> List[Dict]:
                     if question:
                         break
 
+            # 답변이 들어있을 가능성이 있는 태그들을 순서대로 확인
             for a_sel in [".cmp-accordion__panel", "dd", "[class*='panel']", "[class*='content']", "[class*='answer']", "div"]:
                 a_el = await item.query_selector(a_sel)
                 if a_el:
@@ -164,11 +173,8 @@ async def crawl_kia(browser) -> List[Dict]:
 def crawl_tesla() -> List[Dict]:
     """
     Tesla 공식 네이버 블로그 FAQ 크롤러
-    - URL: https://blog.naver.com/teslakr_official/224174286716
-    - 네이버 블로그 SE 에디터 구조:
-        se-quotation  → 질문 (blockquote 스타일 텍스트)
-        se-text       → 답변 (quotation 다음 text 컴포넌트들)
-    - requests로 정적 HTML 수신 후 BeautifulSoup 파싱
+    - quotation 블록을 질문으로 보고
+    - 다음 quotation 전까지를 답변으로 묶는 방식
     """
     print("Crawling Tesla Blog FAQ...")
     results = []
@@ -184,7 +190,7 @@ def crawl_tesla() -> List[Dict]:
             "Referer": "https://blog.naver.com/",
         }
 
-        # 네이버 블로그는 iframe 내부에 본문이 있으므로 PostView URL로 직접 접근
+        # 네이버 블로그 본문은 iframe 구조라 PostView URL로 직접 접근
         post_view_url = "https://blog.naver.com/PostView.naver?blogId=teslakr_official&logNo=224174286716"
         response = requests.get(post_view_url, headers=headers, timeout=15)
         response.raise_for_status()
@@ -205,11 +211,11 @@ def crawl_tesla() -> List[Dict]:
             comp = components[i]
             classes = comp.get("class", [])
 
-            # se-quotation = 질문 블록
+            # 질문 블록 시작
             if "se-quotation" in classes:
                 question = clean_text(comp.get_text(separator=" "))
 
-                # 다음 se-quotation 또는 se-horizontalLine 전까지 답변 수집
+                # 다음 질문 블록 전까지 답변 수집
                 answer_parts = []
                 j = i + 1
                 while j < len(components):
@@ -233,7 +239,7 @@ def crawl_tesla() -> List[Dict]:
                 if validate_item(row_data):
                     results.append(row_data)
 
-                i = j  # 다음 quotation으로 점프
+                i = j  # 이미 읽은 답변 영역은 건너뜀
             else:
                 i += 1
 
@@ -252,6 +258,7 @@ def crawl_kepco() -> List[Dict]:
     results = []
 
     try:
+        # API 응답을 바로 받아서 처리
         response = requests.get(KEPCO_API_URL, timeout=15, verify=False)
         response.raise_for_status()
 
@@ -277,7 +284,7 @@ def crawl_kepco() -> List[Dict]:
 
 
 # =====================
-# 크롤러: Hyundai (Playwright로 재작성)
+# 크롤러: Hyundai (Playwright)
 # =====================
 async def crawl_hyundai(browser) -> List[Dict]:
     print("Crawling Hyundai...")
@@ -289,7 +296,7 @@ async def crawl_hyundai(browser) -> List[Dict]:
         await page.wait_for_timeout(2000)
 
         while True:
-            # FAQ 항목 로드 대기
+            # 현재 페이지 FAQ 목록 로드 대기
             await page.wait_for_selector("div.ui_accordion.acc_01 dl", timeout=10000)
             await page.wait_for_timeout(1000)
 
@@ -315,7 +322,7 @@ async def crawl_hyundai(browser) -> List[Dict]:
                     if not title:
                         continue
 
-                    # 답변 펼치기 (JS 클릭)
+                    # 아코디언 형태라 클릭해서 답변 펼친 뒤 내용 추출
                     await dt.evaluate("el => el.click()")
                     await page.wait_for_timeout(300)
 
@@ -335,7 +342,7 @@ async def crawl_hyundai(browser) -> List[Dict]:
                     print(f"[Hyundai] item error: {e}")
                     continue
 
-            # 다음 페이지 버튼 탐색
+            # strong 다음 a 태그를 다음 페이지 버튼으로 사용
             try:
                 next_btn = await page.query_selector("div.pagination strong + a")
                 if not next_btn:
@@ -363,15 +370,16 @@ async def crawl_hyundai(browser) -> List[Dict]:
 # DB 저장
 # =====================
 def create_table_if_not_exists(conn):
-    """faq 테이블이 없으면 생성"""
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS faq (
-            id          INT AUTO_INCREMENT PRIMARY KEY,
-            question    TEXT        NOT NULL,
-            answer      LONGTEXT    NOT NULL,
-            category    VARCHAR(100),
-            source      VARCHAR(100) NOT NULL
+            id            INT AUTO_INCREMENT PRIMARY KEY,
+            question      TEXT NOT NULL,
+            answer        LONGTEXT NOT NULL,
+            answer_clean  LONGTEXT NULL,
+            cleaned_at DATETIME NULL,
+            category      VARCHAR(100),
+            source        VARCHAR(100) NOT NULL
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     """)
     conn.commit()
@@ -394,6 +402,7 @@ def save_to_db(items: List[Dict]):
     success = 0
     for item in items:
         try:
+            # 현재는 중복 검사 없이 그대로 insert
             cursor.execute(query, (
                 item.get("question", ""),
                 item.get("answer", ""),
@@ -423,6 +432,7 @@ def print_summary(items: List[Dict]):
         src = item["source"]
         source_count[src] = source_count.get(src, 0) + 1
 
+    # 출처별 수집 개수 확인용
     for source, count in source_count.items():
         print(f"  - {source}: {count}건")
 
@@ -435,6 +445,7 @@ def print_summary(items: List[Dict]):
 async def main():
     all_data = []
 
+    # Playwright가 필요한 사이트(기아, 현대) 먼저 처리
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
 
@@ -443,6 +454,7 @@ async def main():
 
         await browser.close()
 
+    # requests 기반 사이트/API는 브라우저 없이 처리
     kepco_data = crawl_kepco()
     tesla_data = crawl_tesla()
 
@@ -451,6 +463,7 @@ async def main():
     all_data.extend(kepco_data)
     all_data.extend(tesla_data)
 
+    # 전체 한 번 더 중복 제거
     all_data = deduplicate_items(all_data)
 
     print_summary(all_data)

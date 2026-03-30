@@ -1,41 +1,26 @@
-# """
-# FAQ 페이지
-# - 전기차 관련 FAQ를 브랜드 / 카테고리 / 키워드로 탐색
-# """
-
 import os
 import re
 import html
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from dotenv import load_dotenv
 from utils.db_connection import get_connection
 
 # =========================
 # 기본 설정
 # =========================
+# 스트림릿 페이지 기본 설정
 st.set_page_config(
     page_title="전기차 FAQ 분석 대시보드",
     layout="wide"
 )
-
-@st.cache_data
-def load_faq_data():
-    """faq 테이블 전체 로드"""
-    conn = get_connection()
-    try:
-        query = "SELECT * FROM faq"
-        df = pd.read_sql(query, conn)
-    finally:
-        conn.close()
-    return df
 
 
 # =========================
 # 공통 CSS
 # =========================
 def inject_css():
+    # 전체 페이지 스타일 커스텀
     st.markdown("""
     <style>
     .main {
@@ -52,7 +37,7 @@ def inject_css():
         font-size: 2rem;
         font-weight: 800;
         color: #16213e;
-        margin-bottom: 0.3rem;
+        margin-top: 0.8rem;
     }
 
     .page-subtitle {
@@ -198,19 +183,19 @@ def inject_css():
         border-radius: 0.2rem;
     }
 
-    /* 사이드바 약간 정리 */
+    /* 사이드바 영역 스타일 */
     section[data-testid="stSidebar"] {
         background-color: #f9fafb;
     }
     </style>
     """, unsafe_allow_html=True)
 
-
 # =========================
 # 데이터 로드
 # =========================
 @st.cache_data
 def load_data():
+    # FAQ 테이블 전체 조회
     conn = get_connection()
     df = pd.read_sql("SELECT * FROM faq", conn)
     conn.close()
@@ -221,6 +206,7 @@ def load_data():
 # 텍스트 정제
 # =========================
 def clean_text_basic(text: str) -> str:
+    # 공통적으로 쓰는 기본 텍스트 정리
     if pd.isna(text):
         return ""
 
@@ -233,17 +219,17 @@ def clean_text_basic(text: str) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = text.replace("\t", " ")
 
-    # 과도한 공백 제거
+    # 연속 공백 정리
     text = re.sub(r"[ ]{2,}", " ", text)
 
-    # 줄 단위 공백 정리
+    # 줄 단위 앞뒤 공백 제거
     lines = [line.strip() for line in text.split("\n")]
 
     cleaned_lines = []
     blank_count = 0
 
     for line in lines:
-        # 완전히 비어있는 줄
+        # 빈 줄은 1줄까지만 허용
         if not line:
             blank_count += 1
             if blank_count <= 1:
@@ -252,7 +238,7 @@ def clean_text_basic(text: str) -> str:
 
         blank_count = 0
 
-        # 의미 없는 단독 문자 라인 약간 정리
+        # 의미 없는 단독 기호 제거
         if line in {".", "·", "•"}:
             continue
 
@@ -260,31 +246,32 @@ def clean_text_basic(text: str) -> str:
 
     text = "\n".join(cleaned_lines)
 
-    # 3개 이상 연속 개행 -> 2개
+    # 개행 너무 많이 붙은 경우 정리
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
 
 
 def clean_answer_text(text: str) -> str:
+    # answer 컬럼 전용 후처리
     text = clean_text_basic(text)
 
-    # 자주 나오는 기호 통일
+    # 기호 통일
     text = text.replace("☞", "→")
     text = text.replace("▷", "•")
     text = text.replace("●", "•")
 
-    # 깨진 slash 줄바꿈 정리
+    # slash가 줄 단위로 찢어진 경우 정리
     text = text.replace("\n/\n", " / ")
 
-    # 괄호 주변 줄바꿈 완화
+    # 괄호 주변 어색한 줄바꿈 정리
     text = re.sub(r"\n([)\]])", r"\1", text)
     text = re.sub(r"([(\[])\n", r"\1", text)
 
-    # URL 앞뒤 과도한 개행 정리
-    text = re.sub(r"\n+(https?://\S+)\n+", r"\n\\1\n", text)
+    # URL 앞뒤 개행 정리
+    text = re.sub(r"\n+(https?://\S+)\n+", r"\n\1\n", text)
 
-    # 특정 안내 문구 정리
+    # 개행 재정리
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
@@ -293,23 +280,219 @@ def clean_answer_text(text: str) -> str:
 def clean_faq_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
+    # 문자열 컬럼 기본 정리
     for col in ["question", "answer", "category", "source"]:
         if col in df.columns:
             df[col] = df[col].fillna("").astype(str)
 
+    # answer_clean이 없을 수도 있으니 대비
+    if "answer_clean" in df.columns:
+        df["answer_clean"] = df["answer_clean"].fillna("").astype(str)
+    else:
+        df["answer_clean"] = ""
+
+    # 질문/카테고리/출처 기본 정리
     df["question"] = df["question"].apply(clean_text_basic)
-    df["answer_raw"] = df["answer"]
-    df["answer"] = df["answer"].apply(clean_answer_text)
     df["category"] = df["category"].apply(clean_text_basic)
     df["source"] = df["source"].apply(clean_text_basic)
 
+    # 원본 answer는 따로 보관
+    df["answer_raw"] = df["answer"]
+
+    # 화면에 보여줄 answer 생성
+    # 우선순위: answer_clean -> 없으면 answer 정제본
+    df["answer_display"] = df["answer_clean"]
+
+    empty_mask = df["answer_display"].str.strip() == ""
+    df.loc[empty_mask, "answer_display"] = (
+        df.loc[empty_mask, "answer"].apply(clean_answer_text)
+    )
+
     return df
+
+
+def extract_number_after_label(text: str, label: str):
+    # 특정 라벨 뒤에 오는 숫자 1개 추출
+    pattern = rf"{re.escape(label)}\s+([0-9.]+)"
+    m = re.search(pattern, text)
+    return m.group(1) if m else None
+
+
+def extract_three_numbers_after_label(text: str, label: str):
+    # 특정 라벨 뒤에 오는 숫자 3개 추출
+    pattern = rf"{re.escape(label)}\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)"
+    m = re.search(pattern, text)
+    if not m:
+        return None
+    return [m.group(1), m.group(2), m.group(3)]
+
+
+def parse_kepco_charge_tables(answer_raw: str):
+    """
+    한전 '충전요금' FAQ 전용 파서
+    원본 텍스트에서 숫자를 뽑아서 표용 DataFrame으로 변환
+    """
+    if not answer_raw:
+        return {
+            "public_df": None,
+            "apartment_fee_df": None,
+            "time_zone_df": None
+        }
+
+    text = html.unescape(str(answer_raw))
+    text = text.replace("\xa0", " ")
+    text = text.replace("&nbsp;", " ")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{2,}", "\n", text).strip()
+
+    # -------------------------
+    # 1) 공용 충전기 표
+    # -------------------------
+    under_100 = extract_number_after_label(text, "100kW미만")
+    over_100 = extract_number_after_label(text, "100kW이상")
+
+    public_df = None
+    if under_100 or over_100:
+        public_rows = []
+        if under_100:
+            public_rows.append({
+                "구분": "100kW 미만",
+                "KEPCO_PLUG 회원결제": under_100,
+                "신용카드": under_100
+            })
+        if over_100:
+            public_rows.append({
+                "구분": "100kW 이상",
+                "KEPCO_PLUG 회원결제": over_100,
+                "신용카드": over_100
+            })
+        public_df = pd.DataFrame(public_rows)
+
+    # -------------------------
+    # 2) 아파트용 충전기 요금 표
+    # -------------------------
+    apt_low = extract_three_numbers_after_label(text, "경부하 시간대")
+    apt_mid = extract_three_numbers_after_label(text, "중간부하 시간대")
+    apt_peak = extract_three_numbers_after_label(text, "최대부하 시간대")
+
+    apartment_fee_df = None
+    if apt_low and apt_mid and apt_peak:
+        apartment_fee_df = pd.DataFrame([
+            {
+                "구분": "경부하 시간대",
+                "여름": apt_low[0],
+                "봄·가을": apt_low[1],
+                "겨울": apt_low[2]
+            },
+            {
+                "구분": "중간부하 시간대",
+                "여름": apt_mid[0],
+                "봄·가을": apt_mid[1],
+                "겨울": apt_mid[2]
+            },
+            {
+                "구분": "최대부하 시간대",
+                "여름": apt_peak[0],
+                "봄·가을": apt_peak[1],
+                "겨울": apt_peak[2]
+            },
+        ])
+
+    # -------------------------
+    # 3) 시간대 구분 표
+    # -------------------------
+    time_zone_df = None
+
+    summer_match = re.search(
+        r"여름철\s*\(6~8월\)\s*"
+        r"([0-9:~∼]+)\s*"
+        r"([0-9:~∼]+\s*[0-9:~∼]+\s*[0-9:~∼]+)\s*"
+        r"([0-9:~∼]+\s*[0-9:~∼]+)",
+        text
+    )
+    spring_match = re.search(
+        r"봄·가을철\s*\(3~5,\s*9~10월\)\s*"
+        r"([0-9:~∼]+)\s*"
+        r"([0-9:~∼]+\s*[0-9:~∼]+\s*[0-9:~∼]+)\s*"
+        r"([0-9:~∼]+\s*[0-9:~∼]+)",
+        text
+    )
+    winter_match = re.search(
+        r"겨울철\s*\(11~익년 2월\)\s*"
+        r"([0-9:~∼]+)\s*"
+        r"([0-9:~∼]+\s*[0-9:~∼]+\s*[0-9:~∼]+)\s*"
+        r"([0-9:~∼]+\s*[0-9:~∼]+)",
+        text
+    )
+
+    time_rows = []
+
+    if summer_match:
+        time_rows.append({
+            "계절": "여름철(6~8월)",
+            "경부하 시간대": summer_match.group(1),
+            "중간부하 시간대": summer_match.group(2).replace(" ", "\n"),
+            "최대부하 시간대": summer_match.group(3).replace(" ", "\n"),
+        })
+
+    if spring_match:
+        time_rows.append({
+            "계절": "봄·가을철(3~5월, 9~10월)",
+            "경부하 시간대": spring_match.group(1),
+            "중간부하 시간대": spring_match.group(2).replace(" ", "\n"),
+            "최대부하 시간대": spring_match.group(3).replace(" ", "\n"),
+        })
+
+    if winter_match:
+        time_rows.append({
+            "계절": "겨울철(11~익년 2월)",
+            "경부하 시간대": winter_match.group(1),
+            "중간부하 시간대": winter_match.group(2).replace(" ", "\n"),
+            "최대부하 시간대": winter_match.group(3).replace(" ", "\n"),
+        })
+
+    if time_rows:
+        time_zone_df = pd.DataFrame(time_rows)
+
+    return {
+        "public_df": public_df,
+        "apartment_fee_df": apartment_fee_df,
+        "time_zone_df": time_zone_df
+    }
+
+
+def render_kepco_charge_tables(row: pd.Series):
+    """
+    한전 '충전요금' 질문일 때만
+    파싱한 표를 화면에 출력
+    """
+    if row.get("source", "") != "한전":
+        return
+
+    if row.get("question", "").strip() != "충전요금":
+        return
+
+    parsed = parse_kepco_charge_tables(row.get("answer_raw", ""))
+
+    if parsed["public_df"] is not None:
+        st.markdown("#### 📊 공용 충전기 요금")
+        st.dataframe(parsed["public_df"], use_container_width=True, hide_index=True)
+
+    if parsed["apartment_fee_df"] is not None:
+        st.markdown("#### 📊 아파트용 충전기 요금")
+        st.dataframe(parsed["apartment_fee_df"], use_container_width=True, hide_index=True)
+
+    if parsed["time_zone_df"] is not None:
+        st.markdown("#### 🕒 계절별 시간대 구분")
+        st.dataframe(parsed["time_zone_df"], use_container_width=True, hide_index=True)
 
 
 # =========================
 # 주제 분류
 # =========================
 def classify_topic(text: str) -> str:
+    # 질문 키워드를 보고 주제 라벨 부여
     text = str(text).lower()
 
     charge_keywords = ["충전", "충전기", "수퍼차저", "급속", "완속", "qr", "카드", "플러그"]
@@ -336,6 +519,7 @@ def classify_topic(text: str) -> str:
 # 검색어 하이라이트
 # =========================
 def highlight(text: str, keyword: str) -> str:
+    # 검색어가 있으면 답변 내에서 강조 표시
     if not keyword:
         return text
 
@@ -352,6 +536,7 @@ def highlight(text: str, keyword: str) -> str:
 # 관련 FAQ 추천
 # =========================
 def get_related_faqs(df: pd.DataFrame, row: pd.Series, topn: int = 3) -> pd.DataFrame:
+    # 같은 topic 안에서 현재 질문 제외 후 추천
     related = df[
         (df["topic"] == row["topic"]) &
         (df["id"] != row["id"])
@@ -360,6 +545,7 @@ def get_related_faqs(df: pd.DataFrame, row: pd.Series, topn: int = 3) -> pd.Data
     if related.empty:
         return related
 
+    # 같은 브랜드 우선, 질문 길이 차이 적은 순으로 정렬
     related["same_source"] = (related["source"] == row["source"]).astype(int)
     related["q_len_diff"] = (related["question"].str.len() - len(row["question"])).abs()
 
@@ -375,6 +561,7 @@ def get_related_faqs(df: pd.DataFrame, row: pd.Series, topn: int = 3) -> pd.Data
 # 세션 상태 초기화
 # =========================
 def init_session_state():
+    # 관련 FAQ 펼침 상태 저장용
     if "selected_related_faq_id" not in st.session_state:
         st.session_state.selected_related_faq_id = None
 
@@ -383,12 +570,7 @@ def init_session_state():
 # 상단 헤더
 # =========================
 def render_page_header(total_count, filtered_count, selected_topic, selected_source):
-    st.markdown('<div class="page-title">🚗 전기차 FAQ 분석 대시보드</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="page-subtitle">브랜드별 전기차 FAQ를 주제별로 탐색하고, 자주 묻는 이슈를 분석할 수 있는 페이지입니다.</div>',
-        unsafe_allow_html=True
-    )
-
+    # 현재 필터 상태 요약 표시
     st.markdown(f"""
         <div class="summary-wrap">
             <span class="summary-chip">총 FAQ {total_count}건</span>
@@ -403,6 +585,7 @@ def render_page_header(total_count, filtered_count, selected_topic, selected_sou
 # 분석 탭
 # =========================
 def render_analysis_tab(df: pd.DataFrame):
+    # 주요 지표 계산
     top_topic = df["topic"].value_counts().idxmax() if not df.empty else "-"
     top_topic_count = int(df["topic"].value_counts().max()) if not df.empty else 0
 
@@ -440,6 +623,7 @@ def render_analysis_tab(df: pd.DataFrame):
         </div>
         """, unsafe_allow_html=True)
 
+    # 주제별 분포 그래프
     st.markdown("<div class='section-title'>📊 주제 분포</div>", unsafe_allow_html=True)
     topic_count = df["topic"].value_counts().reset_index()
     topic_count.columns = ["topic", "count"]
@@ -454,6 +638,7 @@ def render_analysis_tab(df: pd.DataFrame):
     fig.update_layout(showlegend=False, margin=dict(l=10, r=10, t=30, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
+    # 브랜드별 분포 그래프
     st.markdown("<div class='section-title'>🏭 브랜드 분포</div>", unsafe_allow_html=True)
     source_count = df["source"].value_counts().reset_index()
     source_count.columns = ["source", "count"]
@@ -467,6 +652,7 @@ def render_analysis_tab(df: pd.DataFrame):
     fig2.update_layout(margin=dict(l=10, r=10, t=30, b=10))
     st.plotly_chart(fig2, use_container_width=True)
 
+    # 자주 등장하는 질문 TOP 3
     st.markdown("<div class='section-title'>🔥 자주 등장하는 질문</div>", unsafe_allow_html=True)
     top_q = df["question"].value_counts().head(3)
 
@@ -485,9 +671,11 @@ def render_analysis_tab(df: pd.DataFrame):
 def render_explore_tab(df: pd.DataFrame):
     st.sidebar.header("🔎 필터")
 
+    # 브랜드 필터
     source_list = ["전체"] + sorted(df["source"].dropna().unique().tolist())
     selected_source = st.sidebar.selectbox("브랜드", source_list)
 
+    # 질문 검색 키워드
     keyword = st.sidebar.text_input("검색", placeholder="질문 키워드를 입력하세요")
 
     filtered = df.copy()
@@ -500,6 +688,7 @@ def render_explore_tab(df: pd.DataFrame):
             filtered["question"].str.contains(keyword, case=False, na=False)
         ]
 
+    # topic 필터
     topics = ["전체"] + list(df["topic"].dropna().unique())
 
     selected_topic = st.radio(
@@ -518,6 +707,7 @@ def render_explore_tab(df: pd.DataFrame):
         selected_source=selected_source
     )
 
+    # 조건에 맞는 결과가 없을 때
     if filtered.empty:
         st.markdown(
             '<div class="empty-box">조건에 맞는 FAQ가 없습니다.<br>검색어를 바꾸거나 브랜드/주제를 다시 선택해보세요.</div>',
@@ -525,10 +715,12 @@ def render_explore_tab(df: pd.DataFrame):
         )
         return
 
+    # FAQ 목록 출력
     for _, row in filtered.iterrows():
         expander_title = f"{row['source']} · {row['topic']}  \n**{row['question']}**"
 
         with st.expander(expander_title):
+            # 질문 메타 정보 표시
             st.markdown(
                 f"""
                 <div class="faq-meta">
@@ -540,23 +732,37 @@ def render_explore_tab(df: pd.DataFrame):
                 unsafe_allow_html=True
             )
 
-            
+            # 한전 충전요금은 일반 텍스트 대신 표로 보여줌
+            is_kepco_charge = (
+                row.get("source", "") == "한전" and
+                row.get("question", "").strip() == "충전요금"
+            )
 
-            answer = highlight(row["answer"], keyword)
-            st.markdown(f"<div class='faq-answer'>{answer}</div>", unsafe_allow_html=True)
+            if is_kepco_charge:
+                st.markdown(
+                    "<div class='faq-answer'>한전 충전요금은 아래 표에서 확인할 수 있습니다.</div>",
+                    unsafe_allow_html=True
+                )
+                render_kepco_charge_tables(row)
+            else:
+                answer = highlight(row["answer_display"], keyword)
+                st.markdown(f"<div class='faq-answer'>{answer}</div>", unsafe_allow_html=True)
 
+            # 관련 FAQ 추천
             related = get_related_faqs(df, row, topn=3)
 
             if not related.empty:
                 st.markdown("### 📌 관련 FAQ")
 
                 for _, r in related.iterrows():
+                    # 현재 질문 id + 관련 질문 id 조합으로 버튼 key 고유화
                     button_key = f"rel_{row['id']}_{r['id']}"
 
                     label = f"👉 {r['question']}"
                     if st.session_state.selected_related_faq_id == r["id"]:
                         label = f"🔽 {r['question']}"
 
+                    # 버튼 누르면 열고/닫는 토글 처리
                     if st.button(label, key=button_key, use_container_width=True):
                         if st.session_state.selected_related_faq_id == r["id"]:
                             st.session_state.selected_related_faq_id = None
@@ -564,11 +770,11 @@ def render_explore_tab(df: pd.DataFrame):
                             st.session_state.selected_related_faq_id = r["id"]
                         st.rerun()
 
+                    # 선택된 관련 FAQ 답변 표시
                     if st.session_state.selected_related_faq_id == r["id"]:
-                        rel_answer = highlight(r["answer"], keyword)
+                        rel_answer = highlight(r["answer_display"], keyword)
                         st.markdown(f"**[{r['source']}] {r['question']}**")
                         st.markdown(f"<div class='faq-answer'>{rel_answer}</div>", unsafe_allow_html=True)
-
 
 
 # =========================
@@ -578,10 +784,22 @@ def render():
     inject_css()
     init_session_state()
 
+    # 페이지 상단 제목
+    st.markdown('<div class="page-title">🚗 전기차 FAQ 분석 대시보드</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="page-subtitle">브랜드별 전기차 FAQ를 주제별로 탐색하고, 자주 묻는 이슈를 분석할 수 있는 페이지입니다.</div>',
+        unsafe_allow_html=True
+    )
+    st.markdown("<div style='margin-top:-10px'></div>", unsafe_allow_html=True)
+
+    # 데이터 로드 및 전처리
     df = load_data()
     df = clean_faq_dataframe(df)
+
+    # 질문 기준 topic 분류
     df["topic"] = df["question"].apply(classify_topic)
 
+    # 탭 구성
     main_tab1, main_tab2 = st.tabs(["📊 분석", "📂 FAQ 탐색"])
 
     with main_tab1:
@@ -591,5 +809,6 @@ def render():
         render_explore_tab(df)
 
 
+# 스크립트 직접 실행 시 main 호출
 if __name__ == "__main__":
     render()
