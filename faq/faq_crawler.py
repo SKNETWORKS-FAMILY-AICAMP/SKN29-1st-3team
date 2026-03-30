@@ -30,7 +30,6 @@ KIA_URL = "https://www.kia.com/kr/vehicles/kia-ev/guide/faq"
 KEPCO_API_URL = "https://plug.kepco.co.kr:23001/api/v1/faq"
 HYUNDAI_URL = "https://www.hyundai.com/kr/ko/faq.html"
 TESLA_BLOG_URL = "https://blog.naver.com/teslakr_official/224174286716"
-HYUNDAI_URL = "https://www.hyundai.com/kr/ko/faq.html"  # 같은 값이 한 번 더 선언됨
 
 
 # =====================
