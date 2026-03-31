@@ -14,8 +14,8 @@ from utils.db_connection import get_connection
 # 설정 영역 (크롤링 조건)
 # =========================
 QUERY = "전기차 보조금"  # 네이버 뉴스 검색 키워드
-START_DATE = datetime(2022, 4, 1)   # 시작 날짜
-END_DATE = datetime(2026, 3, 30)    # 종료 날짜
+START_DATE = datetime(2018, 1, 3)   # 시작 날짜
+END_DATE = datetime(2018, 1, 4)    # 종료 날짜
 
 # =========================
 # DB 연결 생성
@@ -135,6 +135,23 @@ while current_date <= END_DATE:
 
     # 서버/브라우저 부하 방지
     time.sleep(1)
+
+# =========================
+# 최종 네이버 뉴스 수 집계 후 ev_news_monthly 테이블에 데이터 추가 및 갱신
+# =========================
+sql_insert = """
+INSERT INTO ev_news_monthly (year, month, news_count)
+SELECT 
+    YEAR(date) AS year,
+    MONTH(date) AS month,
+    COUNT(*) AS news_count
+FROM ev_dashboard.ev_news
+GROUP BY YEAR(date), MONTH(date)
+ON DUPLICATE KEY UPDATE
+    news_count = VALUES(news_count);
+"""
+cursor.execute(sql_insert)
+conn.commit()
 
 # =========================
 # 종료 처리
