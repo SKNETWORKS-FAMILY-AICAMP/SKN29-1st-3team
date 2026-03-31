@@ -3,6 +3,7 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from collections import Counter
 import mecab_ko as MeCab
+import os
 
 # =========================
 # 형태소 분석기 초기화
@@ -14,7 +15,12 @@ tagger = MeCab.Tagger()
 # 엑셀에서 텍스트 로드 + 형태소 분석
 # =========================
 def load_text_from_excel(filename="result.xlsx"):
-    wb = load_workbook(filename)
+    
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    file_path = os.path.join(base_dir, filename)
+
+    wb = load_workbook(file_path)
     ws = wb.active
 
     tokens = []
@@ -39,7 +45,7 @@ def generate_wordcloud(words):
 
     # 워드클라우드 객체 생성
     wc = WordCloud(
-        font_path="/System/Library/Fonts/AppleSDGothicNeo.ttc",  # 한글 폰트 (없으면 깨짐)
+        font_path="./wordcloud/font/AppleSDGothicNeo.ttc",  # 한글 폰트 (없으면 깨짐)
         width=1000,
         height=500,
         background_color="white"

@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 from openpyxl import Workbook
+import os
 
 # =========================
 # 기본 설정
@@ -12,7 +13,6 @@ LIST_URL = "https://www.mcee.go.kr/home/web/board/list.do"  # 목록 페이지 A
 HEADERS = {
     "User-Agent": "Mozilla/5.0"  # 크롤링 차단 회피용 (기본 헤더)
 }
-
 
 # =========================
 # 게시글 목록 가져오기
@@ -26,7 +26,9 @@ def get_list(page=0):
         "searchValue": "전기차 보조금",  # 검색 키워드
         "boardMasterId": 1,
         "menuId": 10525,
-        "pagerOffset": page          # 페이지 offset (0, 50, 100 ...)
+        "pagerOffset": page,          # 페이지 offset (0, 50, 100 ...)
+        "condition.fromDate": "2026-01-01",
+        "condition.toDate": "2026-03-01",
     }
 
     # 목록 페이지 요청
@@ -99,7 +101,11 @@ def save_to_excel(data, filename="result.xlsx"):
             d["content"]
         ])
 
-    wb.save(filename)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    file_path = os.path.join(base_dir, filename)
+
+    wb.save(file_path)
     print(f"엑셀 저장 완료: {filename}")
 
 
