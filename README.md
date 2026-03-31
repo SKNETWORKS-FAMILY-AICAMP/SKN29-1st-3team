@@ -175,7 +175,14 @@ DB_PORT=3306
 PUBLIC_SERVICE_KEY=공공데이터 API KEY
 ```
 
-### 3. 테이블 생성
+### 3. DB 연동 및 테이블 생성
+- 생성 전 터미널에서 mysql과 연동 필요
+
+  ```bash
+  mysql -u root -p
+  {비밀번호 입력}
+  ```
+
 ```bash
 mysql -u root -p < db/ev_register.sql
 mysql -u root -p < db/car_db_faq.sql
