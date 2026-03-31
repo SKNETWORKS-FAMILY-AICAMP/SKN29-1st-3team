@@ -652,17 +652,6 @@ def render_analysis_tab(df: pd.DataFrame):
     fig2.update_layout(margin=dict(l=10, r=10, t=30, b=10))
     st.plotly_chart(fig2, use_container_width=True)
 
-    # 자주 등장하는 질문 TOP 3
-    st.markdown("<div class='section-title'>🔥 자주 등장하는 질문</div>", unsafe_allow_html=True)
-    top_q = df["question"].value_counts().head(3)
-
-    for i, q in enumerate(top_q.index, start=1):
-        st.markdown(f"""
-        <div class="top-card" style="margin-bottom:0.7rem;">
-            <div class="top-card-title">TOP {i}</div>
-            <div class="top-card-desc" style="font-size:1rem; color:#111827;">{q}</div>
-        </div>
-        """, unsafe_allow_html=True)
 
 
 # =========================
