@@ -149,20 +149,22 @@ project/
 ---
 ## 🔸 실행 방법
 
-### 0. 가상환경 설치
+### 0. 레포지토리 클론
+```bash
+git clone https://github.com/https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN29-1st-3team.git
+cd skn_1st_3team
+```
+
+### 1. 가상환경 설치
 - miniconda 설치
   - https://www.anaconda.com/download/success
   
 ```bash
 conda create -n skn_1st_conda python=3.10
-conda activate
+conda activate skn_1st_conda
 ```
 
-### 1. 레포지토리 클론
-```bash
-git clone https://github.com/https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN29-1st-3team.git
-cd skn_1st_3team
-```
+### 
  
 ### 2. 환경변수 설정
 `.env` 파일을 생성하고 아래 내용을 입력하세요.
