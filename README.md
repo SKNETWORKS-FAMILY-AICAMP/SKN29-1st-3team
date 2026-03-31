@@ -112,6 +112,8 @@ project/
 │
 ├── db/
 │   ├── car_db_faq.sql          # FAQ 관련 테이블 생성 및 데이터 삽입
+│   ├── car_registration_stats_data_insert    # car_registration_stats 테이블에 데이터 삽입 (api_fetch.py 미실행 시)
+│   ├── ev_news_monthly_data_insert           # ev_news_monthly 테이블에 데이터 삽입 (naver_news_crawler.py 미실행 시)
 │   └── ev_register.sql         # car_registration_stats, ev_news_monthly,
 │                               # code_vhcty_asort, code_sexdstn, code_agrde 테이블 생성
 │
@@ -184,7 +186,14 @@ PUBLIC_SERVICE_KEY=공공데이터 API KEY
   mysql -u root -p
   {비밀번호 입력}
   ```
+- 3 - 1. (5)번 크롤링 후 DB 저장 진행안하고 DB에 데이터 넣고 시작하고 진행할 시 아래 코드를 터미널 창에 입력
+```bash
+mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/car_registration_stats_data_insert.sql
+mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/ev_news_monthly_data_insert.sql
+```
 
+
+- 3 - 2. (5)번 크롤링 후 DB 저장 진행할 시 아래 코드를 터미널창에 입력
 ```bash
 mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/ev_register.sql
 mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/car_db_faq.sql
@@ -195,11 +204,11 @@ mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/car_db_faq.sq
 pip install -r requirements.txt
 ```
 
-### 5. 크롤링 후 DB 저장
+### 5. 크롤링 후 DB 저장 
 ```bash
-python utils/api_fetch.py
-python utils/naver_news_cralwer.py
-python faq/faq_crawler.py
+python utils/api_fetch.py                (3 - 1 진행할 시 실행 X)
+python utils/naver_news_crawler.py       (3 - 1 진행할 시 실행 X)
+python faq/faq_crawler.py                (3 - 1 진행할 시 실행 X)
 python wordcloud/mcee_crawler.py
 python wordcloud/word_cloud.py
 ```
