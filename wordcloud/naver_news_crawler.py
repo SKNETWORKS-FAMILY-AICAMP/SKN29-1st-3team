@@ -14,8 +14,8 @@ from utils.db_connection import get_connection
 # 설정 영역 (크롤링 조건)
 # =========================
 QUERY = "전기차 보조금"  # 네이버 뉴스 검색 키워드
-START_DATE = datetime(2022, 4, 1)   # 시작 날짜
-END_DATE = datetime(2026, 3, 30)    # 종료 날짜
+START_DATE = datetime(2022, 4, 28)   # 시작 날짜
+END_DATE = datetime(2022, 5, 2)    # 종료 날짜
 
 # =========================
 # DB 연결 생성
@@ -126,6 +126,16 @@ while current_date <= END_DATE:
         """
         # executemany → 여러 건 한번에 insert (성능 중요)
         cursor.executemany(sql, data_batch)
+
+        insert_sql = """
+        INSERT IGNORE INTO ev_news_monthly (year, month, news_count)
+        SELECT YEAR(date) AS year, MONTH(date) AS month, count(*) AS news_count
+        FROM ev_dashboard.ev_news
+        GROUP BY year, month
+        ORDER BY year, month DESC;
+        """
+        cursor.execute(insert_sql)
+
         conn.commit()
 
     print(f"{len(data_batch)}건 저장 완료")
