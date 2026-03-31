@@ -121,6 +121,7 @@ project/
 │
 ├── utils/
 │   ├── api_fetch.py            # 공공데이터 API 사용해 DB에 저장
+│   ├── naver_news_crawler.py   # 네이버 뉴스 URL 크롤링하여 DB에 저장
 │   └── db_connection.py        # MySQL 연결 객체 반환 (.env 파일에서 설정값 읽어옴)
 │
 ├── views/
@@ -131,8 +132,9 @@ project/
 │   └── page5_word_cloud.py         # 워드클라우드 시각화
 │
 ├── wordcloud/
+│   ├── font
+          └── AppleSDGothicNeo.ttc  # 워드클라우드 글꼴 설정
 │   ├── mcee_crawler.py         # mcee.go.kr 크롤링하여 보도 내용을 엑셀 저장
-│   ├── naver_news_crawler.py   # 네이버 뉴스 URL 크롤링하여 DB에 저장
 │   ├── result.xlsx             # mcee_crawler.py 결과
 │   ├── word_cloud.py           # 엑셀 파일 로드하여 워드클라우드.png 생성
 │   └── wordcloud.png           # word_cloud.py 결과
