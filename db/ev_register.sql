@@ -34,6 +34,18 @@ CREATE TABLE IF NOT EXISTS car_registration_stats (
     INDEX idx_vhcty  (vhcty_asort_code)
 ) COMMENT='자동차_신규등록_통계';
 
+ALTER TABLE car_registration_stats
+ADD CONSTRAINT fk_vhcty
+FOREIGN KEY (vhcty_asort_code) REFERENCES code_vhcty_asort(code);
+
+ALTER TABLE car_registration_stats
+ADD CONSTRAINT fk_sex
+FOREIGN KEY (sexdstn) REFERENCES code_sexdstn(code);
+
+ALTER TABLE car_registration_stats
+ADD CONSTRAINT fk_agrde
+FOREIGN KEY (agrde) REFERENCES code_agrde(code);
+
 -- 월별 정책 뉴스 수 테이블 생성
 CREATE TABLE IF NOT EXISTS ev_news_monthly (
     id         INT AUTO_INCREMENT PRIMARY KEY,
