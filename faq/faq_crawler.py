@@ -4,9 +4,11 @@ import time
 from typing import List, Dict
 from bs4 import BeautifulSoup
 import requests
-import mysql.connector
-from dotenv import load_dotenv
 import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from utils.db_connection import get_connection
 
 # Selenium 관련
 from selenium import webdriver
@@ -15,19 +17,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-
-# =====================
-# 환경변수 로드
-# =====================
-load_dotenv()
-
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "car_db"),
-    "port": int(os.getenv("DB_PORT", 3306)),
-}
 
 # =====================
 # 크롤링 대상 URL
@@ -413,7 +402,7 @@ def create_table_if_not_exists(conn):
 def save_to_db(items: List[Dict]):
     print(f"\n[DB] {len(items)}건 저장 시작...")
 
-    conn = mysql.connector.connect(**DB_CONFIG)
+    conn = get_connection()
     create_table_if_not_exists(conn)
 
     cursor = conn.cursor()

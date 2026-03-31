@@ -2,9 +2,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-import pymysql
 import time
 from datetime import datetime, timedelta
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from utils.db_connection import get_connection
 
 # =========================
 # 설정 영역 (크롤링 조건)
@@ -14,19 +18,9 @@ START_DATE = datetime(2022, 4, 1)   # 시작 날짜
 END_DATE = datetime(2026, 3, 30)    # 종료 날짜
 
 # =========================
-# DB 연결 정보
-# =========================
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "root1234!",
-    "database": "ev_dashboard"
-}
-
-# =========================
 # DB 연결 생성
 # =========================
-conn = pymysql.connect(**DB_CONFIG)
+conn = get_connection()
 cursor = conn.cursor()
 
 # =========================
@@ -109,6 +103,23 @@ while current_date <= END_DATE:
     # DB 저장 (배치 insert)
     # =========================
     if data_batch:
+        CREATE_SQL = """
+        CREATE TABLE IF NOT EXISTS `ev_news` (
+        `id` int NOT NULL AUTO_INCREMENT,
+        `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '제목',
+        `url` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'URL',
+        `date` date NOT NULL COMMENT '날짜',
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `unique_url` (`url`),
+        KEY `idx_ev_news_date` (`date`)
+        ) ENGINE=InnoDB 
+        DEFAULT CHARSET=utf8mb4 
+        COLLATE=utf8mb4_unicode_ci 
+        COMMENT='전기차_뉴스';
+        """
+        cursor.execute(CREATE_SQL)
+        conn.commit()
+
         sql = """
         INSERT IGNORE INTO ev_news (title, url, date)
         VALUES (%s, %s, %s)
