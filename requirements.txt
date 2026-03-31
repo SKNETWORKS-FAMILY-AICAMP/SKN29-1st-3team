@@ -1,0 +1,12 @@
+streamlit
+pymysql
+pandas
+plotly
+python-dotenv
+requests
+beautifulsoup4
+openpyxl
+wordcloud
+mecab_ko
+selenium
+webdriver-manager
