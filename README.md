@@ -143,19 +143,29 @@ DB_NAME=ev_dashboard
 DB_PORT=3306
 PUBLIC_SERVICE_KEY=공공데이터 API KEY
 ```
- 
-### 3. SQL 실행 (테이블 생성)
+
+### 3. 테이블 생성
 ```bash
 mysql -u root -p < db/ev_register.sql
 mysql -u root -p < db/car_db_faq.sql
 ```
+
+### 4. 크롤링 후 DB 저장
+```bash
+python utils/api_fetch.py
+python utils/naver_news_cralwer.py
+python faq/faq_crawler.py
+python wordcloud/mcee_crawler.py
+python wordcloud/word_cloud.py
+```
  
-### 4. 패키지 설치
+ 
+### 5. 패키지 설치
 ```bash
 pip install -r requirements.txt
 ```
  
-### 5. Streamlit 실행
+### 6. Streamlit 실행
 ```bash
 streamlit run app.py
 ```
