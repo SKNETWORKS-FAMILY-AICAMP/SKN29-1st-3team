@@ -197,20 +197,33 @@ streamlit run app.py
 - **월별 차종별 누적 막대 + 뉴스량 꺾은선 이중축 그래프**
   <img width="1440" height="812" alt="스크린샷 2026-03-30 오후 4 36 43" src="https://github.com/user-attachments/assets/b2cd2dcd-287a-4736-b48b-c65b86ae7961" />
 
+<br>
+
 - **기후에너지환경부 전기차 보조금 관련 보도자료 목록**
   <img width="1440" height="813" alt="스크린샷 2026-03-30 오후 4 40 45" src="https://github.com/user-attachments/assets/f7b1df80-1c4c-4800-b181-5949462c69e0" />
+
+<br>
 
 - **성별 · 연령대 · 차종별 교차분석 차트**
   <img width="1440" height="812" alt="스크린샷 2026-03-30 오후 4 42 18" src="https://github.com/user-attachments/assets/a4fdd027-17ad-47ff-b709-3cf487711ab6" />
   <img width="1440" height="812" alt="스크린샷 2026-03-30 오후 4 42 42" src="https://github.com/user-attachments/assets/078fcb7f-2d74-4215-a8e1-061ff1fea06c" />
   <img width="1440" height="812" alt="스크린샷 2026-03-30 오후 4 42 53" src="https://github.com/user-attachments/assets/98777a53-348c-440b-96a9-135d4cb88fdd" />
 
+<br>
+
 - **FAQ: 브랜드별 전기차 FAQ 통합 검색**
   <img width="1440" height="594" alt="스크린샷 2026-03-30 오후 4 47 29" src="https://github.com/user-attachments/assets/ce87522c-af72-4052-8826-1f76947d91c4" />
+  <br>
+  
   <img width="1440" height="812" alt="스크린샷 2026-03-30 오후 4 48 28" src="https://github.com/user-attachments/assets/98236489-bc95-41e3-a9e4-52a74aaea719" />
+  <br>
+  
   <img width="1440" height="813" alt="스크린샷 2026-03-30 오후 4 50 24" src="https://github.com/user-attachments/assets/6a693fd0-108f-487f-a5cd-2c4cb5b1c20b" />
+  <br>
+  
   <img width="1440" height="812" alt="스크린샷 2026-03-30 오후 4 50 38" src="https://github.com/user-attachments/assets/1eb19580-41cb-48a0-9725-10c9e99cd02b" />
 
+<br>
 - **워드클라우드: 정책 보도자료 키워드 빈도 시각화**
   <img width="1440" height="813" alt="스크린샷 2026-03-30 오후 4 54 36" src="https://github.com/user-attachments/assets/c32ce0f1-075f-43f2-a4ae-18c096b49932" />
 
@@ -218,15 +231,15 @@ streamlit run app.py
 
 ---
 ## ✨ 확장 가능성
-	•	뉴스 감성 분석(NLP)을 통해 정책의 긍정/부정 영향까지 분석 가능
-	•	자동 크롤링 파이프라인 구축을 통한 실시간 데이터 업데이트
-	•	유가, 금리, 충전 인프라 등 외부 변수 결합 분석 가능
-	•	머신러닝 기반 전기차 수요 예측 모델로 확장 가능
+- 뉴스 감성 분석(NLP)을 통해 정책의 긍정/부정 영향까지 분석 가능
+- 자동 크롤링 파이프라인 구축을 통한 실시간 데이터 업데이트
+- 유가, 금리, 충전 인프라 등 외부 변수 결합 분석 가능
+- 머신러닝 기반 전기차 수요 예측 모델로 확장 가능
 
 ## 🌟 기대 효과
-	•	정책 변화가 실제 시장에 미치는 영향에 대한 인사이트 제공
-	•	전기차 구매 트렌드 분석을 통한 정책 설계 지원
-	•	데이터 기반 의사결정을 위한 시각화 플랫폼 제공
+- 정책 변화가 실제 시장에 미치는 영향에 대한 인사이트 제공
+- 전기차 구매 트렌드 분석을 통한 정책 설계 지원
+- 데이터 기반 의사결정을 위한 시각화 플랫폼 제공
 
 <br>
 
