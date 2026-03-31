@@ -1,3 +1,5 @@
+CREATE DATABASE IF NOT EXISTS ev_dashboard CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
 USE ev_dashboard;
 
 -- 1. 코드 테이블 생성 (타입을 INT로 최적화)
