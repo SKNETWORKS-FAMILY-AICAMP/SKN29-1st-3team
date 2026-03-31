@@ -154,7 +154,7 @@ project/
   - https://www.anaconda.com/download/success
   
 ```bash
-conda activate skn_1st_conda
+conda create -n skn_1st_conda python=3.10
 conda activate
 ```
 
