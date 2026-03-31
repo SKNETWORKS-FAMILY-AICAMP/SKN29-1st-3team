@@ -129,8 +129,8 @@ project/
 
 ### 1. 레포지토리 클론
 ```bash
-git clone https://github.com/your-repo.git
-cd your-repo
+git clone https://github.com/https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN29-1st-3team.git
+cd skn_1st_3team
 ```
  
 ### 2. 환경변수 설정
@@ -139,9 +139,9 @@ cd your-repo
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_password
-DB_NAME=your_db_name
+DB_NAME=ev_dashboard
 DB_PORT=3306
-API_KEY=your_public_api_key
+PUBLIC_SERVICE_KEY=공공데이터 API KEY
 ```
  
 ### 3. SQL 실행 (테이블 생성)
