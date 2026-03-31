@@ -2,28 +2,12 @@ import os
 import re
 import html
 from datetime import datetime
-import mysql.connector
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from utils.db_connection import get_connection
 from dotenv import load_dotenv
-
+import pymysql
 load_dotenv()
-
-# DB 접속 정보 (.env 기반)
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "car_db"),
-    "port": int(os.getenv("DB_PORT", 3306)),
-}
-
-
-# =========================
-# DB 연결
-# =========================
-def get_connection():
-    # MySQL 커넥션 생성
-    return mysql.connector.connect(**DB_CONFIG)
-
 
 # =========================
 # 공통 정제 유틸
@@ -303,7 +287,7 @@ def clean_answer(question: str, answer: str, source: str, category: str) -> str:
 # =========================
 def fetch_faq_rows(conn):
     # FAQ 전체 조회
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute("""
         SELECT id, question, answer, category, source, answer_clean
         FROM faq
