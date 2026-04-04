@@ -64,13 +64,11 @@ mcee.go.kr 크롤링   ──→
  
 | 기능 | 설명 |
 |---|---|
-| 📈 정책 뉴스 · 전기차 등록 대수 상관관계 시각화 | 월별 전기차 등록 대수와 정책 뉴스량을 이중축으로 비교, 주요 정책 발표 시점을 마커로 표시 |
+| 📈 정책 뉴스 · 전기차 등록 대수 상관관계 시각화 | 월별 전기차 등록 대수와 정책 뉴스량을 이중축으로 비교 |
 | 📋 정책 보도자료 조회 | 기후에너지환경부 보도자료를 실시간으로 불러와 정책 흐름을 한눈에 확인 |
 | 👤 구매자 프로파일 분석 | 성별 · 연령대 · 차종 교차분석으로 정책에 반응한 구매 집단 파악 |
 | ❓ 전기차 FAQ | 브랜드 · 카테고리 · 키워드 검색으로 전기차 관련 궁금증 해결 |
 | ☁️ 뉴스 워드클라우드 | 기후에너지환경부 보도자료에서 가장 많이 언급된 키워드를 시각화 |
- 
-> **"뉴스 · 등록 통계 · 구매자 데이터 · 정책 보도자료까지, 흩어진 전기차 정보를 하나의 대시보드로 연결했습니다."**
 
 <br>
 
@@ -186,14 +184,14 @@ PUBLIC_SERVICE_KEY=공공데이터 API KEY
   mysql -u root -p
   {비밀번호 입력}
   ```
-- 3 - 1. (5)번 크롤링 후 DB 저장 진행안하고 DB에 데이터 넣고 시작하고 진행할 시 아래 코드를 터미널 창에 입력
+- **3 - 1.** (5)번 크롤링 후 DB 저장 진행안하고 DB에 데이터 넣고 시작하고 진행할 시 아래 코드를 터미널 창에 입력
 ```bash
 mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/car_registration_stats_data_insert.sql
 mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/ev_news_monthly_data_insert.sql
 ```
 
 
-- 3 - 2. (5)번 크롤링 후 DB 저장 진행할 시 아래 코드를 터미널창에 입력
+- **3 - 2.** (5)번 크롤링 후 DB 저장 진행할 시 아래 코드를 터미널창에 입력
 ```bash
 mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/ev_register.sql
 mysql -u root -p --default-character-set=utf8mb4 ev_dashboard < db/car_db_faq.sql
